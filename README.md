@@ -1,39 +1,99 @@
-# 个人博客 · 液态玻璃风格
+# ✨ 灵珑博客 · 液态玻璃风格
 
-Flask 单文件博客：文章 CRUD、Markdown、标签、评论、搜索、RSS、图片上传、管理后台与暗色模式。
+![License: MIT](https://img.shields.io/badge/License-MIT-blue.svg)
+![Python](https://img.shields.io/badge/Python-3.11-3776AB?logo=python&logoColor=white)
+![Flask](https://img.shields.io/badge/Flask-3.x-4B8BBE)
+![Release](https://img.shields.io/github/v/release/Alewn666/linglum-blog?label=release)
 
-> 本仓库由 NAS 归档包整理发布。已剥离运行时数据、密钥、审计日志与大型二进制镜像；
-> 文档中的真实口令与内网 IP 已脱敏。镜像请用仓库内构建脚本生成，或从 Releases 获取。
+> 一个 **505 行单文件**就能完整跑起来的个人博客：文章、Markdown、代码高亮、标签、评论、搜索、归档、RSS、图片上传、管理后台、暗色模式，一个都不少。界面是自写的液态玻璃（glassmorphism）风格。
+
+写博客最常见的两种麻烦：一是装个 CMS 要配数据库、插件、主题；二是用静态生成器又要搭构建链。这个项目选了第三条路——`app.py` 一个文件包含全部路由与逻辑，数据落在本地目录，Markdown 直接渲染，`docker build` 一下就能上线；想改界面就改 `templates/` 和 `static/css/glass.css`，没有构建步骤。
+
+## 功能
+
+| 分类 | 内容 |
+| --- | --- |
+| 阅读 | 首页列表、`/post/<slug>` 正文、归档、标签云、全文搜索、RSS 订阅 |
+| 写作 | Markdown 正文 + Pygments 代码高亮、草稿/发布、图片上传 |
+| 互动 | 评论提交与后台删除 |
+| 管理 | 登录 / 登出 / 改密、文章新建 / 编辑 / 删除、评论管理 |
+| 外观 | 液态玻璃卡片、毛玻璃导航栏、暗色模式、404 页 |
+| 运维 | `/api/health` 健康检查、gunicorn 多线程、Dockerfile 开箱即用 |
+
+前端是 10 个 Jinja2 模板 + 一份 `glass.css` + 一份 `main.js`，没有前端框架、没有 npm、没有打包器。
+
+## 快速开始
+
+**Docker（推荐）**：
+
+```bash
+docker build -t linglum-blog .
+docker run -d --name blog --restart unless-stopped \
+  -p 8080:8080 -e TZ=Asia/Shanghai \
+  -v "$PWD/data:/data" linglum-blog
+```
+
+**本地运行**：
+
+```bash
+pip install -r requirements.txt
+PORT=8080 python3 app.py
+curl http://127.0.0.1:8080/api/health
+```
+
+打开后先访问 `/admin/login` 设置管理口令，之后就能写第一篇文章了。
+
+## 配置
+
+| 变量 | 默认值 | 说明 |
+| --- | --- | --- |
+| `PORT` | `80`（Docker 内为 `8080`） | 监听端口 |
+| `BLOG_DATA` | `./data` | 文章数据、上传图片与配置的存放目录 |
+| `TZ` | `Asia/Shanghai` | 容器时区 |
+| `PYTHONUNBUFFERED` | `1` | 容器日志实时输出 |
 
 ## 目录结构
 
 ```
-├── Dockerfile
-├── app.py
-├── docs/
-├── requirements.txt
+linglum-blog/
+├── app.py                    # 全部后端逻辑（约 505 行）
+├── requirements.txt          # flask / markdown / gunicorn / pygments
+├── Dockerfile                # python:3.11-slim + gunicorn（8 线程）
+├── templates/                # base / index / post / archive / tags / search
+│                             # admin / admin_edit / admin_login / 404
 ├── static/
-├── templates/
-├── test_blog.py
-├── ui_test_layout.py
-├── docs/检查与修复记录.md
-├── static/css/
-├── static/js/
-├── templates/404.html
-├── templates/admin.html
-├── templates/admin_edit.html
+│   ├── css/glass.css         # 液态玻璃样式与暗色模式
+│   └── js/main.js
+├── test_blog.py              # 功能测试（路由 / CRUD / 搜索 / RSS …）
+├── ui_test_layout.py         # 界面布局回归
+└── docs/检查与修复记录.md     # 排障实录
 ```
 
-## 使用
+## 测试
 
-请参考仓库内的说明文档与构建/部署脚本；首次运行前把示例地址、口令改成自己的值。
+```bash
+python3 test_blog.py          # 后端功能回归
+python3 ui_test_layout.py     # 布局与渲染检查
+```
 
-## 安全约定
+## 架构
 
-- `data/`、`.env`、`env.*`、`*.pem`、`*.keystore`、`config.json`、`*.db`、`*.log` 均已在 `.gitignore` 中排除，切勿强制提交。
-- 文档里的 `192.168.1.100` 与 `203.0.113.x` 是示例地址，`<REDACTED_PASSWORD>` 是脱敏占位符。
-- 涉及管理后台的服务请只在可信局域网内使用。
+```
+浏览器 ── Jinja2 模板（10 个） + glass.css ── Flask app.py
+                                             ├─ Markdown + Pygments 渲染
+                                             ├─ BLOG_DATA 本地数据目录
+                                             └─ gunicorn gthread × 8
+```
+
+没有数据库依赖，备份就是把 `data/` 目录打包带走；迁移到另一台机器只要挂同一个目录。
+
+## 说明与边界
+
+- 定位是**个人或小团队博客**，不含多用户、权限分级与评论反垃圾机制。
+- 数据存本地文件系统，多实例部署需要自己处理共享存储。
+- 管理后台请设在可信网络内，或自行加反向代理与 HTTPS。
+- `data/`、`.env`、`*.db`、`*.log` 已在 `.gitignore` 中排除，公开仓库不含真实文章数据与凭据。
 
 ## 许可证
 
-MIT
+MIT — 见 [LICENSE](LICENSE)。本项目由 NAS 归档包整理后公开发布。
