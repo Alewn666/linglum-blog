@@ -1,0 +1,68 @@
+{% extends "base.html" %}
+{% block title %}{{ post.title }} - 个人博客{% endblock %}
+
+{% block content %}
+<article class="post-detail glass-card">
+  <header class="detail-header">
+    <h1 class="detail-title">{{ post.title }}</h1>
+    <div class="post-meta">
+      <time>{{ fmt_time(post.created_at) }}</time>
+      {% if post.category %}<span class="meta-cat">{{ post.category }}</span>{% endif %}
+      {% for t in tags %}
+      <a href="/?tag={{ t }}" class="meta-tag">#{{ t }}</a>
+      {% endfor %}
+      <span class="meta-views">👁 {{ post.views }}</span>
+      {% if post.updated_at and post.updated_at > post.created_at %}
+      <span class="meta-updated">✎ 更新于 {{ fmt_time(post.updated_at) }}</span>
+      {% endif %}
+    </div>
+  </header>
+
+  {% if post.cover %}
+  <img src="{{ post.cover }}" class="detail-cover" alt="">
+  {% endif %}
+
+  <div class="post-content markdown-body">
+    {{ content | safe }}
+  </div>
+
+  <!-- 上一篇/下一篇 -->
+  <nav class="post-nav">
+    {% if prev %}
+    <a href="/post/{{ prev.slug }}" class="post-nav-link glass-card">← {{ prev.title }}</a>
+    {% else %}<span></span>{% endif %}
+    {% if next %}
+    <a href="/post/{{ next.slug }}" class="post-nav-link glass-card">{{ next.title }} →</a>
+    {% endif %}
+  </nav>
+</article>
+
+<!-- 评论 -->
+<section class="comments-section glass-card" id="comments">
+  <h3 class="section-title">💬 评论 <small>({{ comments | length }})</small></h3>
+
+  <form method="post" action="/post/{{ post.slug }}/comment" class="comment-form">
+    <div class="form-row">
+      <input type="text" name="author" placeholder="昵称（可匿名）" maxlength="50" class="input-glass">
+      <input type="email" name="email" placeholder="邮箱（可选）" maxlength="100" class="input-glass">
+    </div>
+    <textarea name="content" placeholder="说点什么…" required rows="3" class="input-glass"></textarea>
+    <button type="submit" class="btn btn-glass">发表评论</button>
+  </form>
+
+  <div class="comment-list">
+    {% for c in comments %}
+    <div class="comment-item">
+      <div class="comment-head">
+        <strong>{{ c.author }}</strong>
+        <time>{{ fmt_time(c.created_at) }}</time>
+      </div>
+      <p class="comment-body">{{ c.content }}</p>
+    </div>
+    {% endfor %}
+    {% if not comments %}
+    <p class="muted">还没有评论，来抢沙发~</p>
+    {% endif %}
+  </div>
+</section>
+{% endblock %}

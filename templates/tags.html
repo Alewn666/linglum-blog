@@ -1,0 +1,13 @@
+{% extends "base.html" %}
+{% block title %}标签 - 个人博客{% endblock %}
+{% block content %}
+<div class="glass-card tags-page">
+  <h2>🏷️ 标签云</h2>
+  <div class="tag-cloud">
+    {% for tag, n in tag_counts %}
+    <a href="/?tag={{ tag }}" class="tag-cloud-item" style="font-size: {{ 13 + n * 3 }}px">#{{ tag }} <small>{{ n }}</small></a>
+    {% endfor %}
+  </div>
+  {% if not tag_counts %}<p class="muted">还没有标签</p>{% endif %}
+</div>
+{% endblock %}

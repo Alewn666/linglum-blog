@@ -1,0 +1,95 @@
+{% extends "base.html" %}
+{% block title %}管理后台 - 个人博客{% endblock %}
+{% block content %}
+<div class="admin-page">
+  <div class="admin-header glass-card">
+    <h2>⚙️ 管理后台</h2>
+    <div class="admin-actions">
+      <a href="/admin/post/new" class="btn btn-glass">✍️ 写文章</a>
+      <a href="/admin/logout" class="btn btn-glass btn-sm">退出</a>
+    </div>
+  </div>
+
+  <!-- 统计 -->
+  <div class="stats-grid">
+    <div class="stat-card glass-card"><div class="stat-num">{{ stats.total }}</div><div class="stat-label">总文章</div></div>
+    <div class="stat-card glass-card"><div class="stat-num">{{ stats.published }}</div><div class="stat-label">已发布</div></div>
+    <div class="stat-card glass-card"><div class="stat-num">{{ stats.draft }}</div><div class="stat-label">草稿</div></div>
+    <div class="stat-card glass-card"><div class="stat-num">{{ stats.comments }}</div><div class="stat-label">评论</div></div>
+    <div class="stat-card glass-card"><div class="stat-num">{{ stats.views }}</div><div class="stat-label">总浏览</div></div>
+  </div>
+
+  <!-- 修改密码（弹层，展开不占位，不会把下面的文章管理挤下去） -->
+  <div class="glass-card admin-section">
+    <h3>🔑 修改密码</h3>
+    <p class="muted" style="margin:6px 0 12px;font-size:13px">点开后在弹层里改，关掉不影响当前页面位置。</p>
+    <button type="button" class="btn btn-glass btn-sm" id="btnPwOpen">修改管理员密码</button>
+  </div>
+
+  <div class="modal-backdrop hidden" id="pwModal">
+    <div class="modal" role="dialog" aria-modal="true" aria-labelledby="pwTitle">
+      <div class="modal-head">
+        <h3 id="pwTitle">🔑 修改密码</h3>
+        <button type="button" class="modal-x" id="btnPwClose" aria-label="关闭">✕</button>
+      </div>
+      <form method="post" action="/admin/password" class="password-form">
+        <input type="password" name="old_password" placeholder="原密码" class="input-glass" required>
+        <input type="password" name="new_password" placeholder="新密码（至少6位）" class="input-glass" required minlength="6">
+        <button type="submit" class="btn btn-glass btn-sm">修改</button>
+      </form>
+    </div>
+  </div>
+
+  <!-- 文章列表 -->
+  <div class="glass-card admin-section">
+    <h3>📋 文章管理</h3>
+    <div class="admin-table-wrap">
+    <table class="admin-table">
+      <thead><tr><th>标题</th><th>状态</th><th>浏览</th><th>时间</th><th>操作</th></tr></thead>
+      <tbody>
+      {% for p in posts %}
+      <tr>
+        <td class="td-title">
+          {% if p.pinned %}📌{% endif %}
+          {% if p.status == 'published' %}
+          <a href="/post/{{ p.slug }}" target="_blank">{{ p.title }}</a>
+          {% else %}{{ p.title }}{% endif %}
+        </td>
+        <td><span class="badge {{ 'badge-ok' if p.status == 'published' else 'badge-warn' }}">{{ '发布' if p.status == 'published' else '草稿' }}</span></td>
+        <td>{{ p.views }}</td>
+        <td class="td-time">{{ fmt_time(p.created_at, '%m-%d %H:%M') }}</td>
+        <td class="td-actions">
+          <a href="/admin/post/{{ p.id }}/edit" class="btn btn-glass btn-xs">编辑</a>
+          <form method="post" action="/admin/post/{{ p.id }}/delete" class="inline-form"
+                onsubmit="return confirm('确定删除「{{ p.title }}」？')">
+            <button type="submit" class="btn btn-glass btn-xs btn-danger">删</button>
+          </form>
+        </td>
+      </tr>
+      {% endfor %}
+      </tbody>
+    </table>
+    </div>
+  </div>
+
+  <!-- 评论管理 -->
+  <div class="glass-card admin-section">
+    <h3>💬 评论管理 <small class="muted">（最近 50 条）</small></h3>
+    {% for c in comments %}
+    <div class="admin-comment">
+      <div class="admin-comment-head">
+        <strong>{{ c.author }}</strong>
+        <span class="muted">在《{{ c.post_title }}》</span>
+        <time class="muted">{{ fmt_time(c.created_at) }}</time>
+        <form method="post" action="/admin/comment/{{ c.id }}/delete" class="inline-form"
+              onsubmit="return confirm('删除这条评论？')">
+          <button type="submit" class="btn btn-glass btn-xs btn-danger">删</button>
+        </form>
+      </div>
+      <p>{{ c.content }}</p>
+    </div>
+    {% endfor %}
+    {% if not comments %}<p class="muted">没有评论</p>{% endif %}
+  </div>
+</div>
+{% endblock %}

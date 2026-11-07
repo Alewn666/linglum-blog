@@ -1,0 +1,58 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="theme-color" content="#0a0a1a">
+<title>{% block title %}个人博客{% endblock %}</title>
+<link rel="stylesheet" href="{{ url_for('static', filename='css/glass.css') }}?v=20261005d">
+<link rel="alternate" type="application/rss+xml" title="RSS" href="/rss">
+{% block head %}{% endblock %}
+</head>
+<body>
+<!-- 背景粒子/光斑 -->
+<div class="bg-orbs">
+  <div class="orb orb-1"></div>
+  <div class="orb orb-2"></div>
+  <div class="orb orb-3"></div>
+  <div class="orb orb-4"></div>
+</div>
+
+<!-- 导航 -->
+<nav class="glass-nav">
+  <div class="nav-inner">
+    <a href="/" class="nav-brand">✦ 博客</a>
+    <div class="nav-links">
+      <a href="/" class="nav-link {% if request.path == '/' %}active{% endif %}">首页</a>
+      <a href="/archive" class="nav-link {% if request.path == '/archive' %}active{% endif %}">归档</a>
+      <a href="/tags" class="nav-link {% if request.path == '/tags' %}active{% endif %}">标签</a>
+      <a href="/search" class="nav-link {% if request.path == '/search' %}active{% endif %}">搜索</a>
+      <button class="theme-toggle" id="themeToggle" title="切换主题">◐</button>
+    </div>
+    <button class="nav-burger" id="navBurger">☰</button>
+  </div>
+  <div class="nav-mobile hidden" id="navMobile">
+    <a href="/" class="nav-link">首页</a>
+    <a href="/archive" class="nav-link">归档</a>
+    <a href="/tags" class="nav-link">标签</a>
+    <a href="/search" class="nav-link">搜索</a>
+    <a href="/admin" class="nav-link">管理</a>
+  </div>
+</nav>
+
+<main class="container">
+{% block content %}{% endblock %}
+</main>
+
+<footer class="glass-footer">
+  <div class="footer-inner">
+    <span>© {{ now().year if now else 2026 }} 个人博客</span>
+    <a href="/rss">RSS</a>
+    <a href="/admin">管理</a>
+  </div>
+</footer>
+
+<script src="{{ url_for('static', filename='js/main.js') }}?v=20261005d"></script>
+{% block scripts %}{% endblock %}
+</body>
+</html>

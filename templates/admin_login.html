@@ -1,0 +1,15 @@
+{% extends "base.html" %}
+{% block title %}登录 - 管理后台{% endblock %}
+{% block content %}
+<div class="glass-card auth-page">
+  <h2>🔐 管理员登录</h2>
+  {% if error %}<div class="alert alert-error">{{ error }}</div>{% endif %}
+  <form method="post">
+    <label class="lbl">用户名</label>
+    <input type="text" name="username" class="input-glass" required autofocus>
+    <label class="lbl">密码</label>
+    <input type="password" name="password" class="input-glass" required>
+    <button type="submit" class="btn btn-glass btn-block">登录</button>
+  </form>
+</div>
+{% endblock %}

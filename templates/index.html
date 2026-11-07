@@ -1,0 +1,68 @@
+{% extends "base.html" %}
+{% block title %}首页 - 个人博客{% endblock %}
+
+{% block content %}
+{% if tag_counts or cat_counts %}
+<div class="filter-bar glass-card">
+  {% if active_tag %}<span class="filter-label">标签: {{ active_tag }} <a href="/" class="filter-x">✕</a></span>{% endif %}
+  {% if active_cat %}<span class="filter-label">分类: {{ active_cat }} <a href="/" class="filter-x">✕</a></span>{% endif %}
+  {% if cat_counts %}
+  <div class="filter-group">
+    {% for cat, n in cat_counts %}
+    <a href="/?category={{ cat }}" class="chip {% if active_cat == cat %}chip-on{% endif %}">{{ cat }} <small>{{ n }}</small></a>
+    {% endfor %}
+  </div>
+  {% endif %}
+  {% if tag_counts %}
+  <div class="filter-group">
+    {% for tag, n in tag_counts[:15] %}
+    <a href="/?tag={{ tag }}" class="chip {% if active_tag == tag %}chip-on{% endif %}">#{{ tag }} <small>{{ n }}</small></a>
+    {% endfor %}
+  </div>
+  {% endif %}
+</div>
+{% endif %}
+
+{% if not posts %}
+<div class="glass-card empty-state">
+  <div class="empty-icon">📝</div>
+  <p>还没有文章</p>
+  <a href="/admin/post/new" class="btn btn-glass">写第一篇</a>
+</div>
+{% endif %}
+
+{% for post in posts %}
+<article class="post-card glass-card {% if post.pinned %}pinned{% endif %}">
+  {% if post.pinned %}<span class="pin-badge">📌 置顶</span>{% endif %}
+  {% if post.cover %}
+  <a href="/post/{{ post.slug }}" class="post-cover"><img src="{{ post.cover }}" alt="" loading="lazy"></a>
+  {% endif %}
+  <div class="post-body">
+    <h2 class="post-title">
+      <a href="/post/{{ post.slug }}">{{ post.title }}</a>
+    </h2>
+    <p class="post-excerpt">{{ post.excerpt }}</p>
+    <div class="post-meta">
+      <time>{{ fmt_time(post.created_at) }}</time>
+      {% if post.category %}<span class="meta-cat">{{ post.category }}</span>{% endif %}
+      {% for t in load_tags(post.tags) %}
+      <a href="/?tag={{ t }}" class="meta-tag">#{{ t }}</a>
+      {% endfor %}
+      <span class="meta-views">👁 {{ post.views }}</span>
+    </div>
+  </div>
+</article>
+{% endfor %}
+
+{% if total_pages > 1 %}
+<div class="pagination glass-card">
+  {% if page > 1 %}
+  <a href="/?page={{ page - 1 }}{% if active_tag %}&tag={{ active_tag }}{% endif %}{% if active_cat %}&category={{ active_cat }}{% endif %}" class="btn btn-glass btn-sm">← 上一页</a>
+  {% endif %}
+  <span class="page-info">{{ page }} / {{ total_pages }}</span>
+  {% if page < total_pages %}
+  <a href="/?page={{ page + 1 }}{% if active_tag %}&tag={{ active_tag }}{% endif %}{% if active_cat %}&category={{ active_cat }}{% endif %}" class="btn btn-glass btn-sm">下一页 →</a>
+  {% endif %}
+</div>
+{% endif %}
+{% endblock %}

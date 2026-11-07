@@ -1,0 +1,21 @@
+{% extends "base.html" %}
+{% block title %}归档 - 个人博客{% endblock %}
+{% block content %}
+<div class="glass-card archive-page">
+  <h2>📚 归档</h2>
+  {% for month, posts in grouped.items() %}
+  <div class="archive-group">
+    <h3 class="archive-month">{{ month }} <small>({{ posts | length }})</small></h3>
+    <ul class="archive-list">
+      {% for p in posts %}
+      <li>
+        <time>{{ fmt_time(p.created_at, '%m-%d') }}</time>
+        <a href="/post/{{ p.slug }}">{{ p.title }}</a>
+      </li>
+      {% endfor %}
+    </ul>
+  </div>
+  {% endfor %}
+  {% if not grouped %}<p class="muted">还没有文章</p>{% endif %}
+</div>
+{% endblock %}

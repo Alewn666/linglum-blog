@@ -1,0 +1,22 @@
+{% extends "base.html" %}
+{% block title %}搜索 - 个人博客{% endblock %}
+{% block content %}
+<div class="glass-card search-page">
+  <h2>🔍 搜索</h2>
+  <form method="get" action="/search" class="search-form">
+    <input type="text" name="q" value="{{ q }}" placeholder="输入关键词…" class="input-glass search-input" autofocus>
+    <button type="submit" class="btn btn-glass">搜索</button>
+  </form>
+  {% if q %}
+  <p class="muted">找到 {{ results | length }} 篇相关文章</p>
+  {% for post in results %}
+  <a href="/post/{{ post.slug }}" class="search-result">
+    <h3>{{ post.title }}</h3>
+    <p>{{ post.excerpt }}</p>
+    <time>{{ fmt_time(post.created_at) }}</time>
+  </a>
+  {% endfor %}
+  {% if not results %}<p class="muted">没有找到相关文章</p>{% endif %}
+  {% endif %}
+</div>
+{% endblock %}

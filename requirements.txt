@@ -1,0 +1,4 @@
+﻿flask>=3.0
+markdown>=3.5
+gunicorn>=21.2
+pygments>=2.17

@@ -1,0 +1,127 @@
+{% extends "base.html" %}
+{% block title %}{{ '编辑' if post else '写文章' }} - 管理后台{% endblock %}
+{% block head %}
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/styles/github.min.css" id="hljs-css">
+{% endblock %}
+
+{% block content %}
+<div class="admin-page">
+  <div class="glass-card admin-section">
+    <h2>{{ '✏️ 编辑文章' if post else '✍️ 写文章' }}</h2>
+    {% if error %}<div class="alert alert-error">{{ error }}</div>{% endif %}
+
+    <form method="post" id="postForm">
+      <label class="lbl">标题 *</label>
+      <input type="text" name="title" class="input-glass" required value="{{ post.title if post else '' }}" placeholder="文章标题">
+
+      <div class="form-row-3">
+        <div>
+          <label class="lbl">分类</label>
+          <input type="text" name="category" class="input-glass" value="{{ post.category if post else '' }}" placeholder="如：技术、生活">
+        </div>
+        <div>
+          <label class="lbl">标签（逗号分隔）</label>
+          <input type="text" name="tags" class="input-glass" value="{{ (post.tags | replace('\"', '') | replace('[', '') | replace(']', '')) if post else '' }}" placeholder="python, flask, 随笔">
+        </div>
+        <div>
+          <label class="lbl">封面图 URL</label>
+          <input type="text" name="cover" class="input-glass" value="{{ post.cover if post else '' }}" placeholder="https://...">
+        </div>
+      </div>
+
+      <div class="form-row-3">
+        <div>
+          <label class="lbl">状态</label>
+          <select name="status" class="input-glass">
+            <option value="published" {{ 'selected' if post and post.status == 'published' or not post }}>发布</option>
+            <option value="draft" {{ 'selected' if post and post.status == 'draft' }}>草稿</option>
+          </select>
+        </div>
+        <div>
+          <label class="lbl">置顶</label>
+          <label class="checkbox-label"><input type="checkbox" name="pinned" {{ 'checked' if post and post.pinned }}> 置顶文章</label>
+        </div>
+        <div></div>
+      </div>
+
+      <label class="lbl">正文（Markdown）</label>
+      <div class="editor-toolbar">
+        <button type="button" class="btn btn-glass btn-xs" onclick="insertMd('**','**')" title="加粗">B</button>
+        <button type="button" class="btn btn-glass btn-xs" onclick="insertMd('*','*')" title="斜体">I</button>
+        <button type="button" class="btn btn-glass btn-xs" onclick="insertMd('## ','')" title="标题">H</button>
+        <button type="button" class="btn btn-glass btn-xs" onclick="insertMd('`','`')" title="代码">&lt;/&gt;</button>
+        <button type="button" class="btn btn-glass btn-xs" onclick="insertMd('[','](url)')" title="链接">🔗</button>
+        <button type="button" class="btn btn-glass btn-xs" onclick="insertMd('![alt](',')')" title="图片">🖼</button>
+        <button type="button" class="btn btn-glass btn-xs" onclick="insertMd('> ','')" title="引用">❝</button>
+        <button type="button" class="btn btn-glass btn-xs" onclick="uploadImage()" title="上传图片">⬆ 图</button>
+        <input type="file" id="imgFile" accept="image/*" hidden>
+        <span class="editor-hint">支持 Markdown 语法，实时预览</span>
+      </div>
+      <textarea name="content" id="editorText" class="input-glass editor-textarea" rows="20" required>{{ post.content if post else '' }}</textarea>
+
+      <div class="editor-preview glass-card" id="editorPreview"></div>
+
+      <div class="form-actions">
+        <button type="submit" class="btn btn-glass btn-primary">💾 保存</button>
+        <a href="/admin" class="btn btn-glass">取消</a>
+      </div>
+    </form>
+  </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+// 工具栏插入
+function insertMd(before, after) {
+  var ta = document.getElementById('editorText');
+  var s = ta.selectionStart, e = ta.selectionEnd;
+  var sel = ta.value.substring(s, e);
+  ta.value = ta.value.substring(0, s) + before + sel + after + ta.value.substring(e);
+  ta.focus();
+  ta.selectionStart = s + before.length;
+  ta.selectionEnd = s + before.length + sel.length;
+  updatePreview();
+}
+
+// 图片上传
+function uploadImage() { document.getElementById('imgFile').click(); }
+document.getElementById('imgFile').addEventListener('change', function() {
+  if (!this.files[0]) return;
+  var fd = new FormData();
+  fd.append('file', this.files[0]);
+  fetch('/api/upload', { method: 'POST', body: fd })
+    .then(r => r.json())
+    .then(d => {
+      if (d.url) {
+        insertMd('![image](', d.url + ')');
+      } else { alert(d.error || '上传失败'); }
+    });
+});
+
+// 实时预览（简版，不加载完整渲染器）
+var previewTimer;
+function updatePreview() {
+  clearTimeout(previewTimer);
+  previewTimer = setTimeout(function() {
+    var text = document.getElementById('editorText').value;
+    var html = text
+      .replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;')
+      .replace(/^### (.+)$/gm, '<h3>$1</h3>')
+      .replace(/^## (.+)$/gm, '<h2>$1</h2>')
+      .replace(/^# (.+)$/gm, '<h1>$1</h1>')
+      .replace(/\*\*(.+?)\*\*/g, '<strong>$1</strong>')
+      .replace(/\*(.+?)\*/g, '<em>$1</em>')
+      .replace(/`(.+?)`/g, '<code>$1</code>')
+      .replace(/\[(.+?)\]\((.+?)\)/g, '<a href="$2">$1</a>')
+      .replace(/^> (.+)$/gm, '<blockquote>$1</blockquote>')
+      .replace(/```([\s\S]*?)```/g, '<pre><code>$1</code></pre>')
+      .replace(/\n\n/g, '</p><p>')
+      .replace(/\n/g, '<br>');
+    document.getElementById('editorPreview').innerHTML = '<p>' + html + '</p>';
+  }, 300);
+}
+document.getElementById('editorText').addEventListener('input', updatePreview);
+updatePreview();
+</script>
+{% endblock %}
